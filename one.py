@@ -1,11 +1,13 @@
 # -*- codeing = utf-8 -*-
+#
+"""
+    2022/4/12
+    编写：zxy
+    """
 import os
 import re  # 正则表达式，进行文字匹配`
-
-# import lxml.html
 import requests
 from lxml import etree
-# from bs4 import BeautifulSoup  # 网页解析，获取数据
 from multiprocessing.dummy import Pool
 
 
@@ -32,8 +34,8 @@ def get_toc(url):
 def get_article(url):
     """
         获取每一章正文，并返回章节名和正文
-        : url:小说章节链接
-        : return:章节名，正文
+        : url:小说章节链接,小说名，章节数
+        : return:
         """
     chapter_html = requests.get(url[0], headers=headers)
     chapter_name = re.findall('<h1>(.*?)</h1>', chapter_html.text, re.S)
@@ -47,8 +49,8 @@ def get_article(url):
 def saveData(name, chapter, article, num):
     """
             保存数据
-            :
-            :
+            :name, chapter, article, num：小说名，章节名，正文，章节数
+            :return:
             """
     # 防止发生TXT文件写入错误
     file_path = '《' + name + '》' + '/' + str(num) + '.txt'
@@ -62,15 +64,15 @@ def saveData(name, chapter, article, num):
 if __name__ == "__main__":  # 当程序执行时
     # 调用函数
     #    main()
-    headers = {
+    headers = {                             # 请求头
         'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Appl'
                       'eWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.74 Safari/537.36 Edg/99.0.1150.46',
         'Host': 'www.bbiquge.net'
     }
     link = 'https://www.bbiquge.net/book_476/'  # 小说目录页链接
     r = requests.get(link, headers=headers, timeout=10)
-    url_list, name_ = get_toc(link)
-    os.makedirs('《' + name_ + '》', exist_ok=True)
+    url_list, name_ = get_toc(link)             # 获取每一章链接和小说名
+    os.makedirs('《' + name_ + '》', exist_ok=True)  # 创建文件夹
     pool = Pool(200)
     print('正在抓取' + '  ' + '《' + name_ + '》')
     article_list = [[x, x, x] for x in range(len(url_list))]

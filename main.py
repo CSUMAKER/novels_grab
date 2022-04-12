@@ -3,42 +3,31 @@ import os
 import re  # 正则表达式，进行文字匹配`
 
 # import lxml.html
-# from multiprocessing import pool
-# from typing import List
-
 import requests
 from lxml import etree
+from bs4 import BeautifulSoup  # 网页解析，获取数据
 from multiprocessing.dummy import Pool
 
 
-# from bs4 import BeautifulSoup  # 网页解析，获取数据
+# def main():
+# 获取网页
+#        getData()
 
-
-def main():
-    # 获取网页
-    print('开始爬取')
-
-
+# def getData():
+# 获取数据
 def get_toc(url):
     """
     获取每一章链接，储存到一个列表中并返回
     : url:小说目录页链接
     : return:每章链接
     """
-    headers = {
-        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Appl'
-                      'eWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.74 Safari/537.36 Edg/99.0.1150.46',
-        'Host': 'www.bbiquge.net'
-    }
     toc_html = requests.get(url, headers=headers)
     toc_url_list = []
     toc_url_block = re.findall('<dl(.*?)</dl>', toc_html.text, re.S)[0]
     toc_url = re.findall('href="(.*?)"', toc_url_block, re.S)
-    selector = etree.HTML(toc_html.text)
-    _name = selector.xpath('//*[@id="info"]/h1/text()')
     for n in toc_url:
         toc_url_list.append(url + n)
-    return toc_url_list, _name
+    return toc_url_list
 
 
 def get_article(url):
@@ -47,12 +36,6 @@ def get_article(url):
         : url:小说章节链接
         : return:章节名，正文
         """
-    headers = {
-        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Appl'
-                      'eWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.74 Safari/537.36 Edg/99.0.1150.46',
-        'Host': 'www.bbiquge.net'
-    }
-    print(url)
     chapter_html = requests.get(url[0], headers=headers)
     chapter_name = re.findall('<h1>(.*?)</h1>', chapter_html.text, re.S)
     print(chapter_name)
@@ -69,24 +52,41 @@ def saveData(name, chapter, article, num):
             :
             """
     # 防止发生TXT文件写入错误
-    file_path = name + '/' + '第' + str(num) + '章' + '.txt'
-    with open(file_path, 'w+', encoding='utf-8') as f:
-        f.write(' \t\t' + chapter + '\n')
+
+    file_path = name + '/' + str(num) + '.txt'
+    with open(file_path, 'w', encoding='utf-8') as f:
+        f.write(chapter + '\n')
         for s in article:
             f.write(s + '\n')
 
 
 if __name__ == "__main__":  # 当程序执行时
     # 调用函数
-    main()
-    link = 'https://www.bbiquge.net/book_1531/'  # 小说目录页链接
-    url_list, name_ = get_toc(link)
-    print(name_[0])
-    os.makedirs(name_[0], exist_ok=True)
-    pool = Pool(10)
-    article_list = [x for x in range(len(url_list))]
-    for k in range(len(url_list)):
-        article_list[k] = [url_list[k], name_[0], k]
-        res = pool.map(get_article, article_list)
-        # get_article([url_list[k], name[0], k])
+    #    main()
+    headers = {
+        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Appl'
+                      'eWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.74 Safari/537.36 Edg/99.0.1150.46',
+        'Host': 'www.bbiquge.net'
+    }
+    for i in range(1, 2):
+        link = 'https://www.bbiquge.net/top/allvisit/' + str(i) + '.html'
+        r = requests.get(link, headers=headers, timeout=10)
+        soup = BeautifulSoup(r.text, "lxml")
+        html_block = soup.find_all("span", class_="l2")
+        name_list = re.findall('/" target="_blank">(.*?)</a>', str(html_block), re.S)
+        print(name_list)
+        name_url = re.findall('href="(.*?)"', str(html_block), re.S)
+        print(name_url)
+
+        for j in range(len(name_list)):
+            os.makedirs(name_list[j], exist_ok=True)
+            toc__url = get_toc(name_url[j])
+            pool = Pool(100)
+            print('正在抓取'+'  '+name_list[j])
+            article_list = [x for x in range(len(toc__url))]
+            for k in range(len(toc__url)):
+                article_list[k] = [toc__url[k], name_list[j], str(k)]
+                pool.apply_async(get_article, (article_list[k],))
+            pool.close()
+            pool.join()
     print("爬取完毕！")
