@@ -1,7 +1,7 @@
 # -*- codeing = utf-8 -*-
 #
 """
-    2022/4/16
+    2022/4/20
     编写：zxy
     """
 import os
@@ -18,9 +18,16 @@ def main():
     # 获取网页
     fiction = input("请输入要下载的小说：")
     link = get_url(fiction)  # 小说目录页链接
-    url_list, name_ = get_toc(link[0])  # 获取每一章链接和小说名
+    # 返回小说目录页链接为空
+    if not link:
+        print("没有要搜索的小说！！！")
+        return
+    numbers_fiction = int(input("请输入要下载的小说编号（如果没有，输入0退出程序）："))
+    if numbers_fiction == 0:
+        return
+    url_list, name_ = get_toc(link[numbers_fiction - 1])  # 获取每一章链接和小说名
     os.makedirs('《' + name_ + '》', exist_ok=True)  # 创建文件夹
-    pool = Pool(200)
+    pool = Pool(200)  # 创建进程池
     print('正在抓取' + '  ' + '《' + name_ + '》')
     article_list = [[x, x, x] for x in range(len(url_list))]
     for k in range(len(url_list)):
@@ -30,6 +37,8 @@ def main():
         pool.apply_async(get_article, (article_list[k],))
     pool.close()
     pool.join()
+    print("爬取完毕！")
+    return
 
 
 def get_url(fiction):
@@ -48,14 +57,25 @@ def get_url(fiction):
             break
     time.sleep(3)
     html = driver.page_source
+    selector = etree.HTML(html)
     toc_block = re.findall('<tbody>(.*?)</tbody>', html, re.S)
+    name_block = re.findall('<a(.*?)/a>', toc_block[0], re.S)
     url_list = re.findall('href="(.*?)">', toc_block[0], re.S)
+    name_block[0] = '1'.join(name_block)
+    name_list = re.findall('>(.*?)<', name_block[0], re.S)
+    print("%-10s\t\t%-20s\t\t%-25s\t\t%-20s\t\t%-20s\t\t%-20s\t\t" % ('编号', '文章名称', '最新章节',
+                                                                      '作者', '更新', '状态'))
+    for i in range(int(len(name_list)) // 2):
+        _list = selector.xpath('//*[@id="main"]/table/tbody/tr[' + str(i + 2) + ']/td/text()')
+        print("%-10s\t\t%-20s\t\t%-25s\t\t%-20s\t\t%-20s\t\t%-20s\t\t" % (
+            str(i + 1), name_list[2 * i], name_list[2 * i + 1],
+            _list[0], _list[2], _list[3]))
     # 关闭标签页或窗口
     driver.close()
     # 切回到之前的标签页或窗口
     driver.switch_to.window(original_window)
     driver.close()
-    return url_list[0:2:len(url_list)]
+    return url_list[0:len(url_list):2]
 
 
 def get_toc(url):
@@ -87,6 +107,7 @@ def get_article(url):
     selector = etree.HTML(chapter_html.text)
     info = selector.xpath('//*[@id="content"]/text()')
     saveData(url[1], chapter_name[0], info, url[2])
+    return
 
 
 # 保存数据
@@ -103,6 +124,7 @@ def saveData(name, chapter, article, num):
         for s in article:
             f.write(s + '\n')
     f.close()
+    return
 
 
 if __name__ == "__main__":  # 当程序执行时
@@ -113,5 +135,3 @@ if __name__ == "__main__":  # 当程序执行时
         'Host': 'www.bbiquge.net'
     }
     main()
-
-    print("爬取完毕！")
