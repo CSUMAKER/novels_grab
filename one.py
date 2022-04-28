@@ -47,17 +47,26 @@ def get_url(fiction):
     time.sleep(2)
     driver.find_element('id', "bdcsMain").send_keys(fiction)
     driver.find_element('id', "bdcsMain").send_keys(Keys.ENTER)
-    # Keys(driver).ADD("斗破苍穹")
-    # ActionChains(driver).click(element).perform()
     original_window = driver.current_window_handle
     # 循环执行，直到找到一个新的窗口句柄
     for window_handle in driver.window_handles:
         if window_handle != original_window:
             driver.switch_to.window(window_handle)
             break
-    time.sleep(3)
+    time.sleep(2)
+    # 获取当前窗口url
+    current_url = driver.current_url
+    # 获取当前窗口html源码
     html = driver.page_source
+    # 解析html源码
     selector = etree.HTML(html)
+    # 判断是否出现搜索错误
+    if current_url == 'https://www.bbiquge.net/modules/article/search.php?searchkey=ddd&submit=%CB%D1%CB%F7':
+        # 获取错误原因文本
+        txt_1 = selector.xpath('/html/body/div/div/div/div[2]/div[1]/text()[1]')
+        # 打印该错误原因
+        print(txt_1[0])
+        return
     toc_block = re.findall('<tbody>(.*?)</tbody>', html, re.S)
     name_block = re.findall('<a(.*?)/a>', toc_block[0], re.S)
     url_list = re.findall('href="(.*?)">', toc_block[0], re.S)
@@ -71,10 +80,11 @@ def get_url(fiction):
             str(i + 1), name_list[2 * i], name_list[2 * i + 1],
             _list[0], _list[2], _list[3]))
     # 关闭标签页或窗口
-    driver.close()
+    # driver.close()
     # 切回到之前的标签页或窗口
-    driver.switch_to.window(original_window)
-    driver.close()
+    # driver.switch_to.window(original_window)
+    # driver.close()
+    driver.quit()
     return url_list[0:len(url_list):2]
 
 
