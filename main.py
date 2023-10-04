@@ -1,4 +1,13 @@
-# -*- codeing = utf-8 -*-
+# -*- coding = utf-8 -*-
+
+"""
+[使用模块]:  requests >>> pip install requests        <第三方模块>
+            lxml >>> pip install lxml            <第三方模块>
+            bs4 >>> pip install bs4  <第三方模块>
+            multiprocessing >>> pip install multiprocessing  <第三方模块>
+[时间]:     2022/4/20
+[编写]:     zxy
+"""
 import os
 import re  # 正则表达式，进行文字匹配`
 
