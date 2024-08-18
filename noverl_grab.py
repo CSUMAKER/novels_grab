@@ -37,7 +37,7 @@ user_agent_list = [
         "Safari/537.36",
     ]
 
-def get_article(title,url):
+def get_article(num,title,url):
     try:
         headers['user-agent'] = random.choice(user_agent_list)
         response = requests.get(url=url, headers=headers)
@@ -49,8 +49,8 @@ def get_article(title,url):
         if os.path.exists(title + '.txt'):
             print('已下载章节:  ', title)
         else:
-            with open(title + '.txt', mode='a', encoding='utf-8') as f:
-                f.write(book)
+            with open(num+title + '.txt', mode='a', encoding='utf-8') as f:
+                f.write(title+"\n"+book)
                 print('正在下载章节:  ', title)
     except Exception as e:
         print(e)
@@ -60,7 +60,7 @@ def get_toc(novel):
     link = novel[2]
     title_list = []
     url_list = []
-    filename = '小说\\'+str(novel[1])+'\\'
+    filename = 'Download\\'+str(novel[1])+'\\'
     print("正在下载小说《"+str(novel[1])+"》")
     headers['user-agent'] = random.choice(user_agent_list)
     html_data = requests.get(url=link, headers=headers).text
@@ -142,7 +142,8 @@ def main():
     title_list,url_list=get_toc(novels[numbers_fiction-1])
     pool = Pool(100)  # 创建进程池
     for k in range(len(url_list)):
-        pool.apply_async(get_article, (title_list[k],url_list[k]))
+        # get_article(title_list[k],url_list[k])
+        pool.apply_async(get_article, (str(k),title_list[k],url_list[k]))
     pool.close()
     pool.join()
     return
